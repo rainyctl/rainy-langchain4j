@@ -1,10 +1,13 @@
 package cc.rainyctl.rainylangchain4j.config;
 
+import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+
+import java.util.List;
 
 @Configuration
 public class LLMConfig {
@@ -34,6 +37,11 @@ public class LLMConfig {
                 .apiKey(props.getApiKey())
                 .baseUrl(props.getBaseUrl())
                 .modelName(props.getModelName())
+                .logRequests(true)
+                .logResponses(true)
+                .maxRetries(2) // at most 3 requests will be sent
+                .listeners(List.of(new MyChatModelListener()))
+                // .timeout(Duration.ofSeconds(1)) timeout will trigger retry
                 .build();
     }
 }
