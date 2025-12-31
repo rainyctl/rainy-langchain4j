@@ -3,7 +3,10 @@ package cc.rainyctl.rainylangchain4j.config;
 import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiImageModel;
+import dev.langchain4j.model.openai.OpenAiImageModelName;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +56,14 @@ public class LLMConfig {
                 .apiKey(props.getApiKey())
                 .baseUrl(props.getBaseUrl())
                 .modelName(props.getModelName())
+                .build();
+    }
+
+    @Bean
+    public ImageModel imageModel(OpenAIProperties props) {
+        return OpenAiImageModel.builder()
+                .apiKey(props.getApiKey())
+                .modelName(OpenAiImageModelName.DALL_E_3)
                 .build();
     }
 }
