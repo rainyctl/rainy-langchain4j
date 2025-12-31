@@ -2,7 +2,9 @@ package cc.rainyctl.rainylangchain4j.config;
 
 import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -42,6 +44,15 @@ public class LLMConfig {
                 .maxRetries(2) // at most 3 requests will be sent
                 .listeners(List.of(new MyChatModelListener()))
                 // .timeout(Duration.ofSeconds(1)) timeout will trigger retry
+                .build();
+    }
+
+    @Bean
+    public StreamingChatModel streamingChatModel(OpenAIProperties props) {
+        return OpenAiStreamingChatModel.builder()
+                .apiKey(props.getApiKey())
+                .baseUrl(props.getBaseUrl())
+                .modelName(props.getModelName())
                 .build();
     }
 }
