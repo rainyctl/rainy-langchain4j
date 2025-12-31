@@ -1,13 +1,15 @@
 package cc.rainyctl.rainylangchain4j.config;
 
 import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
+import cc.rainyctl.rainylangchain4j.service.AssistantWithMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.image.ImageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiImageModel;
-import dev.langchain4j.model.openai.OpenAiImageModelName;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.*;
+import dev.langchain4j.service.AiServices;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -64,6 +66,24 @@ public class LLMConfig {
         return OpenAiImageModel.builder()
                 .apiKey(props.getApiKey())
                 .modelName(OpenAiImageModelName.DALL_E_3)
+                .build();
+    }
+
+    @Bean
+    @Primary
+    public AssistantWithMemory assistantWithMemory(@Qualifier("openAI") ChatModel chatModel) {
+        return AiServices.builder(AssistantWithMemory.class)
+                .chatModel(chatModel)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .build();
+    }
+
+    @Bean("mem2")
+    public AssistantWithMemory assistantWithTokenMemory(@Qualifier("openAI") ChatModel chatModel) {
+        var estimator = new OpenAiTokenCountEstimator(OpenAiChatModelName.GPT_5);
+        return AiServices.builder(AssistantWithMemory.class)
+                .chatModel(chatModel)
+                .chatMemoryProvider(memoryId -> TokenWindowChatMemory.withMaxTokens(1000, estimator))
                 .build();
     }
 }
