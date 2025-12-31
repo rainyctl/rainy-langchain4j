@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cc.rainyctl.rainylangchain4j.mapper.ChatMemoryMapper">
+    <select id="findByMemoryId" resultType="java.lang.String">
+        SELECT value FROM chat_memory WHERE memory_id = #{memoryId}
+    </select>
+
+    <insert id="insertMemory">
+        INSERT INTO chat_memory(memory_id, value)
+        VALUES(#{memoryId}, #{value})
+    </insert>
+
+    <update id="updateMemory">
+        UPDATE chat_memory
+        SET value = #{value}
+        WHERE memory_id = #{memoryId}
+    </update>
+
+    <insert id="upsertMemory">
+        INSERT INTO chat_memory(memory_id, value)
+        VALUES(#{memoryId}, #{value})
+        ON DUPLICATE KEY UPDATE
+                             value = VALUES(value),
+                             updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <delete id="deleteMemory">
+        DELETE FROM chat_memory
+        WHERE memory_id = #{memoryId}
+    </delete>
+</mapper>

@@ -1,6 +1,7 @@
 package cc.rainyctl.rainylangchain4j.config;
 
 import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
+import cc.rainyctl.rainylangchain4j.memory.DBChatMemoryStore;
 import cc.rainyctl.rainylangchain4j.memory.RedisChatMemoryStore;
 import cc.rainyctl.rainylangchain4j.service.AssistantWithMemory;
 import cc.rainyctl.rainylangchain4j.service.ChatPersistentAssistant;
@@ -97,11 +98,25 @@ public class LLMConfig {
     }
 
     @Bean
+    @Primary
     public ChatPersistentAssistant  chatPersistentAssistant(@Qualifier("llm") ChatModel chatModel, RedisChatMemoryStore redisChatMemoryStore) {
         ChatMemoryProvider chatMemoryProvider = memoryId -> MessageWindowChatMemory.builder()
                 .id(memoryId)
                 .maxMessages(1000)
                 .chatMemoryStore(redisChatMemoryStore)
+                .build();
+        return AiServices.builder(ChatPersistentAssistant.class)
+                .chatModel(chatModel)
+                .chatMemoryProvider(chatMemoryProvider)
+                .build();
+    }
+
+    @Bean("ps2")
+    public ChatPersistentAssistant  chatPersistentAssistant2(@Qualifier("llm") ChatModel chatModel, DBChatMemoryStore dbChatMemoryStore) {
+        ChatMemoryProvider chatMemoryProvider = memoryId -> MessageWindowChatMemory.builder()
+                .id(memoryId)
+                .maxMessages(1000)
+                .chatMemoryStore(dbChatMemoryStore)
                 .build();
         return AiServices.builder(ChatPersistentAssistant.class)
                 .chatModel(chatModel)
