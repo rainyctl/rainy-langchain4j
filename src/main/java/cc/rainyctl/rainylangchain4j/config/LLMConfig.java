@@ -3,10 +3,7 @@ package cc.rainyctl.rainylangchain4j.config;
 import cc.rainyctl.rainylangchain4j.listener.MyChatModelListener;
 import cc.rainyctl.rainylangchain4j.memory.DBChatMemoryStore;
 import cc.rainyctl.rainylangchain4j.memory.RedisChatMemoryStore;
-import cc.rainyctl.rainylangchain4j.service.AssistantWithMemory;
-import cc.rainyctl.rainylangchain4j.service.ChatPersistentAssistant;
-import cc.rainyctl.rainylangchain4j.service.FunctionAssistant;
-import cc.rainyctl.rainylangchain4j.service.WeatherService;
+import cc.rainyctl.rainylangchain4j.service.*;
 import cc.rainyctl.rainylangchain4j.tool.WeatherTool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -22,9 +19,11 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.*;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
@@ -213,6 +212,7 @@ public class LLMConfig {
     }
 
     @Bean
+    @Primary
     EmbeddingStore<TextSegment>  embeddingStore(QdrantProperties props) {
         return QdrantEmbeddingStore.builder()
                 .host(props.getHost())
@@ -225,5 +225,23 @@ public class LLMConfig {
     QdrantClient qdrantClient(QdrantProperties props) {
         var builder = QdrantGrpcClient.newBuilder(props.getHost(), props.getPort(), false);
         return new QdrantClient(builder.build());
+    }
+
+    @Bean("in-mem-store")
+    EmbeddingStore<TextSegment> inMemoryStore() {
+        return new InMemoryEmbeddingStore<>();
+    }
+
+    @Bean("simple-rag-assistant")
+    public Assistant assistant(
+            @Qualifier("llm") ChatModel chatModel,
+            @Qualifier("in-mem-store") EmbeddingStore<TextSegment> embeddingStore
+//            EmbeddingStore<TextSegment> embeddingStore // Qdrant, seems to need extra work on dimension
+    ) {
+        return AiServices.builder(Assistant.class)
+                .chatModel(chatModel)
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
+                .contentRetriever(EmbeddingStoreContentRetriever.from(embeddingStore))
+                .build();
     }
 }

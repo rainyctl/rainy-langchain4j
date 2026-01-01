@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+// test only, many methods should be POST actually
 @Slf4j
 @RestController
 @RequestMapping("/embed")
@@ -90,11 +91,16 @@ public class EmbeddingModelController {
         return embeddingStore.add(embedding, segment);
     }
 
+    @GetMapping("/remove")
+    public void remove(String id) {
+        embeddingStore.remove(id);
+    }
+
     // search similar
     @GetMapping("/ask")
     public String ask() {
-         Embedding queryEmbedding = embeddingModel.embed("李白写啥了").content(); // ok
-//         Embedding queryEmbedding = embeddingModel.embed("思念家乡").content(); // ok?
+//         Embedding queryEmbedding = embeddingModel.embed("李白写啥了").content(); // ok
+         Embedding queryEmbedding = embeddingModel.embed("思念家乡").content(); // ok
 //         Embedding queryEmbedding = embeddingModel.embed("《静夜思》").content(); // ok
 
         EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
