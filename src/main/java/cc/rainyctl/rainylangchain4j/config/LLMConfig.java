@@ -5,21 +5,32 @@ import cc.rainyctl.rainylangchain4j.memory.DBChatMemoryStore;
 import cc.rainyctl.rainylangchain4j.memory.RedisChatMemoryStore;
 import cc.rainyctl.rainylangchain4j.service.AssistantWithMemory;
 import cc.rainyctl.rainylangchain4j.service.ChatPersistentAssistant;
+import cc.rainyctl.rainylangchain4j.service.FunctionAssistant;
+import cc.rainyctl.rainylangchain4j.service.WeatherService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.*;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.ToolExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Configuration
 public class LLMConfig {
 
@@ -121,6 +132,55 @@ public class LLMConfig {
         return AiServices.builder(ChatPersistentAssistant.class)
                 .chatModel(chatModel)
                 .chatMemoryProvider(chatMemoryProvider)
+                .build();
+    }
+
+    @Bean("test_only")
+    public FunctionAssistant weatherAssistant(@Qualifier("llm") ChatModel chatModel) {
+        ToolSpecification toolSpecification = ToolSpecification.builder()
+                .name("get_current_weather")
+                .description("tools for getting current weather of a city")
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("city", "the city of interest")
+                        .required("city")
+                        .build())
+                .build();
+        ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+            log.info("[Tool] Getting current weather with args: {}", toolExecutionRequest.arguments());
+            return "rainy now";
+        };
+        return AiServices.builder(FunctionAssistant.class)
+                .chatModel(chatModel)
+                .tools(Map.of(toolSpecification, toolExecutor))
+                .build();
+    }
+
+    @Bean("good_one")
+    public FunctionAssistant weatherAssistant2(@Qualifier("llm") ChatModel chatModel, WeatherService weatherService) {
+        ToolSpecification toolSpecification = ToolSpecification.builder()
+                .name("get_current_weather")
+                .description("tools for getting current weather of a city")
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("city", "the city of interest")
+                        .required("city")
+                        .build())
+                .build();
+        ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+            log.info("[Tool] Getting current weather with args: {}", toolExecutionRequest.arguments());
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                Map<String, Object> args = mapper.readValue(toolExecutionRequest.arguments(), new TypeReference<>() {
+                });
+                String city = (String) args.get("city");
+                var res = weatherService.getWeather(city);
+                return res.toString();
+            } catch (JsonProcessingException e) {
+                return "Failed because of " + e;
+            }
+        };
+        return AiServices.builder(FunctionAssistant.class)
+                .chatModel(chatModel)
+                .tools(Map.of(toolSpecification, toolExecutor))
                 .build();
     }
 }
