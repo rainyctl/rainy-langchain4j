@@ -12,16 +12,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.*;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
+import io.qdrant.client.QdrantClient;
+import io.qdrant.client.QdrantGrpcClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -195,5 +201,29 @@ public class LLMConfig {
                 .tools(weatherTool)
                 .build();
 
+    }
+
+    @Bean
+    EmbeddingModel embeddingModel(OpenAIProperties  openAIProperties) {
+        return OpenAiEmbeddingModel.builder()
+                .apiKey(openAIProperties.getApiKey())
+                .baseUrl(openAIProperties.getBaseUrl())
+                .modelName(OpenAiEmbeddingModelName.TEXT_EMBEDDING_3_SMALL)
+                .build();
+    }
+
+    @Bean
+    EmbeddingStore<TextSegment>  embeddingStore(QdrantProperties props) {
+        return QdrantEmbeddingStore.builder()
+                .host(props.getHost())
+                .port(props.getPort())
+                .collectionName(props.getCollectionName())
+                .build();
+    }
+
+    @Bean
+    QdrantClient qdrantClient(QdrantProperties props) {
+        var builder = QdrantGrpcClient.newBuilder(props.getHost(), props.getPort(), false);
+        return new QdrantClient(builder.build());
     }
 }
