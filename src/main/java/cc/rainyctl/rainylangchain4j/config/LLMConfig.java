@@ -7,6 +7,7 @@ import cc.rainyctl.rainylangchain4j.service.AssistantWithMemory;
 import cc.rainyctl.rainylangchain4j.service.ChatPersistentAssistant;
 import cc.rainyctl.rainylangchain4j.service.FunctionAssistant;
 import cc.rainyctl.rainylangchain4j.service.WeatherService;
+import cc.rainyctl.rainylangchain4j.tool.WeatherTool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -182,5 +183,17 @@ public class LLMConfig {
                 .chatModel(chatModel)
                 .tools(Map.of(toolSpecification, toolExecutor))
                 .build();
+    }
+
+    @Bean("fine")
+    FunctionAssistant functionAssistant3(
+            @Qualifier("llm") ChatModel chatModel,
+            WeatherTool weatherTool
+    ) {
+        return AiServices.builder(FunctionAssistant.class)
+                .chatModel(chatModel)
+                .tools(weatherTool)
+                .build();
+
     }
 }

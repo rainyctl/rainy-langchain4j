@@ -17,17 +17,24 @@ public class FunctionCallingController {
 
     private final WeatherService weatherService;
 
+    // mock data
     private final FunctionAssistant  assistant;
 
+    // low-level api
     private final FunctionAssistant assistant2;
+
+    // high-level api
+    private final FunctionAssistant assistant3;
 
     public FunctionCallingController(
             WeatherService weatherService,
             @Qualifier("test_only") FunctionAssistant assistant,
-            @Qualifier("good_one") FunctionAssistant assistant2) {
+            @Qualifier("good_one") FunctionAssistant assistant2,
+            @Qualifier("fine") FunctionAssistant assistant3) {
         this.weatherService = weatherService;
         this.assistant = assistant;
         this.assistant2 = assistant2;
+        this.assistant3 = assistant3;
     }
 
     @GetMapping("/fn/current")
@@ -48,5 +55,10 @@ public class FunctionCallingController {
     @GetMapping("/fn/good")
     public String test2(@RequestParam(value = "city", defaultValue = "") String city) {
         return assistant2.chat("how's the weather now in " + city);
+    }
+
+    @GetMapping("/fn/fine")
+    public String test3(@RequestParam(value = "city", defaultValue = "") String city) {
+        return assistant3.chat("how's the weather now in " + city);
     }
 }
