@@ -10,6 +10,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -22,6 +27,7 @@ import dev.langchain4j.model.openai.*;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
@@ -242,6 +248,30 @@ public class LLMConfig {
                 .chatModel(chatModel)
                 .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
                 .contentRetriever(EmbeddingStoreContentRetriever.from(embeddingStore))
+                .build();
+    }
+
+    @Bean
+    public MCPAssistant assistantWithMCP(@Qualifier("llm") ChatModel chatModel) {
+        // add time mcp, require uv which will then call uvx, no need to install server manually
+        // https://github.com/modelcontextprotocol/servers/tree/main/src/time
+        // https://mcp.so/server/time/modelcontextprotocol
+        McpTransport transport = new StdioMcpTransport.Builder()
+                .command(List.of("uvx", "mcp-server-time"))
+                // .environment(...)
+                .logEvents(true)
+                .build(); // should we close it at some point?
+        McpClient mcpClient = new DefaultMcpClient.Builder()
+                .transport(transport)
+                .build();
+        ToolProvider toolProvider = McpToolProvider.builder()
+                .mcpClients(mcpClient) // can add multiple clients for different tasks
+                .build();
+
+        return AiServices.builder(MCPAssistant.class)
+                .chatModel(chatModel)
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
+                .toolProvider(toolProvider)
                 .build();
     }
 }

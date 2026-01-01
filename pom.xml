@@ -106,6 +106,18 @@
             <artifactId>langchain4j-easy-rag</artifactId>
             <version>1.10.0-beta18</version>
         </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-mcp</artifactId>
+            <version>1.10.0-beta18</version>
+            <!-- got conflicting http client after adding this one somehow -->
+            <exclusions>
+                <exclusion>
+                    <groupId>dev.langchain4j</groupId>
+                    <artifactId>langchain4j-http-client-jdk</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
